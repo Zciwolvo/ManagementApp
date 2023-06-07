@@ -1,37 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
+using System.Collections.ObjectModel;
+using System.Data;
 using System.Data.SqlClient;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
-using DynamicData;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+
 
 namespace ManagementApp.Models
 {
     public class ManagmentModelManipulation
     {
-        private string _connectionsString = "Server=(localdb)\\local;" +
-            "                               Database=BD1d2b_2022;" +
-            "                               Trusted_Connection=True;";
-        private void ConnectToDatabase()
+        public void ConnectToDatabase(string con)
         {
-            string connectionString = _connectionsString;
+            string connectionString = con;
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
                 connection.Open();
                 Console.WriteLine("Connected to database.");
             }
         }
-        public List<T> ReadDataFromTable<T>(string tableName) where T : new()
+        public static IEnumerable<T> ReadDataFromTable<T>(string tableName, string con) where T : new()
         {
-            List<T> objects = new List<T>();
+            var objects = new List<T>();
 
-            string connectionString = _connectionsString;
+            string connectionString = con;
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
                 connection.Open();
@@ -59,22 +51,91 @@ namespace ManagementApp.Models
 
             return objects;
         }
-    private void ModifyDataInDatabase()
-    {
-        string connectionString = _connectionsString;
-        using (SqlConnection connection = new SqlConnection(connectionString))
+
+
+        public void ModifyDataInTable<T>(T obj, string tableName, string idColumnName, string con) where T : new()
         {
-            connection.Open();
-                string sql = "UPDATE Customers SET ContactName='John Smith' WHERE CustomerID=1";
+            string connectionString = con;
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+                string sql = $"UPDATE {tableName} SET ";
+                PropertyInfo[] properties = typeof(T).GetProperties();
+                for (int i = 0; i < properties.Length; i++)
+                {
+                    if (properties[i].Name != idColumnName)
+                    {
+                        sql += $"{properties[i].Name}=@{properties[i].Name}";
+                        if (i < properties.Length - 1)
+                        {
+                            sql += ", ";
+                        }
+                    }
+                }
+                sql += $" WHERE {idColumnName}=@{idColumnName}";
                 using (SqlCommand command = new SqlCommand(sql, connection))
                 {
+                    foreach (PropertyInfo property in properties)
+                    {
+                        if (property.Name != idColumnName)
+                        {
+                            command.Parameters.AddWithValue($"@{property.Name}", property.GetValue(obj));
+                        }
+                    }
                     int rowsAffected = command.ExecuteNonQuery();
                     Console.WriteLine("{0} rows affected.", rowsAffected);
                 }
             }
         }
+
+        public void InsertDataIntoTable<T>(T obj, string tableName, string con) where T : new()
+        {
+            string connectionString = con;
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+                string sql = $"INSERT INTO {tableName} (";
+                PropertyInfo[] properties = typeof(T).GetProperties();
+                for (int i = 0; i < properties.Length; i++)
+                {
+                    if (properties[i].GetValue(obj) != null)
+                    {
+                        sql += $"{properties[i].Name}";
+                        if (i < properties.Length - 1)
+                        {
+                            sql += ", ";
+                        }
+                    }
+                }
+                sql += ") VALUES (";
+                for (int i = 0; i < properties.Length; i++)
+                {
+                    if (properties[i].GetValue(obj) != null)
+                    {
+                        sql += $"@{properties[i].Name}";
+                        if (i < properties.Length - 1)
+                        {
+                            sql += ", ";
+                        }
+                    }
+                }
+                sql += ")";
+                using (SqlCommand command = new SqlCommand(sql, connection))
+                {
+                    foreach (PropertyInfo property in properties)
+                    {
+                        if (property.GetValue(obj) != null)
+                        {
+                            command.Parameters.AddWithValue($"@{property.Name}", property.GetValue(obj));
+                        }
+                    }
+                    int rowsAffected = command.ExecuteNonQuery();
+                    Console.WriteLine("{0} rows affected.", rowsAffected);
+                }
+            }
+        }
+
     }
+
 }
-
-
 

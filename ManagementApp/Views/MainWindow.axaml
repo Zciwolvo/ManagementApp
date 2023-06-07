@@ -1,20 +1,42 @@
 <Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:ManagementApp.ViewModels"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        x:Class="ManagementApp.Views.MainWindow"
-        x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/avalonia-logo.ico"
-        Title="ManagementApp">
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:vm="using:ManagementApp.ViewModels"
+            xmlns:controls="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
+			xmlns:dg="clr-namespace:Avalonia.Controls.DataGrid;assembly=Avalonia.Controls.DataGrid"
+            xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+            xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+            mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+            x:Class="ManagementApp.Views.MainWindow"
+            x:DataType="vm:MainWindowViewModel"
+            Icon="/Assets/avalonia-logo.ico"
+            Title="ManagementApp">
 
-    <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainWindowViewModel/>
-    </Design.DataContext>
-
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-
-</Window>
+	<Design.DataContext>
+		<vm:MainWindowViewModel/>
+	</Design.DataContext>
+	
+	<StackPanel Orientation="Vertical">
+		<ListBox Items="{Binding TableNames}">
+			<ListBox.ItemTemplate>
+				<DataTemplate>
+					<StackPanel Orientation="Horizontal">
+						<TextBlock Text="{Binding}" Margin="5"/>
+						<ItemsControl Items="{Binding Path=DataContext.TableColumns, RelativeSource={RelativeSource AncestorType=Window}}">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<StackPanel Orientation="Horizontal"/>
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate>
+									<Button Content="{Binding}" Margin="5" Tag="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=Tag}" Command="{Binding ChangeFocusCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Tag}"/>
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+					</StackPanel>
+				</DataTemplate>
+			</ListBox.ItemTemplate>
+		</ListBox>
+		<DataGrid Items="{Binding Dostawcy}" AutoGenerateColumns="True"/>
+	</StackPanel>
+</Window>	
