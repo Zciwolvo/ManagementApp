@@ -16,12 +16,12 @@ namespace ManagementApp.Models
         public DateTime DataWysyłki { get; set; }
         public int IDspedytora { get; set; }
         public decimal Fracht { get; set; }
-        public string NazwaOdbiorcy { get; set; }
-        public string AdresOdbiorcy { get; set; }
-        public string MiastoOdbiorcy { get; set; }
-        public string RegionOdbiorcy { get; set; }
-        public string KodPocztowyOdbiorcy { get; set; }
-        public string KrajOdbiorcy { get; set; }
+        public string? NazwaOdbiorcy { get; set; }
+        public string? AdresOdbiorcy { get; set; }
+        public string? MiastoOdbiorcy { get; set; }
+        public string? RegionOdbiorcy { get; set; }
+        public string? KodPocztowyOdbiorcy { get; set; }
+        public string? KrajOdbiorcy { get; set; }
     }
 
 }

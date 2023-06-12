@@ -12,7 +12,7 @@ namespace ManagementApp.Models
         public int IDproduktu { get; set; }
         public decimal CenaJednostkowa { get; set; }
         public int Ilość { get; set; }
-        public decimal Rabat { get; set; }
+        public float Rabat { get; set; }
     }
 
 }

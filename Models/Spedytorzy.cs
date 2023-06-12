@@ -9,8 +9,8 @@ namespace ManagementApp.Models
     public class Spedytorzy
     {
         public int IDspedytora { get; set; }
-        public string NazwaFirmy { get; set; }
-        public string Telefon { get; set; }
+        public string? NazwaFirmy { get; set; }
+        public string? Telefon { get; set; }
     }
 
 }

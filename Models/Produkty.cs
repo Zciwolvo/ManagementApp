@@ -9,10 +9,10 @@ namespace ManagementApp.Models
     public class Produkty
     {
         public int IDproduktu { get; set; }
-        public string NazwaProduktu { get; set; }
+        public string? NazwaProduktu { get; set; }
         public int IDdostawcy { get; set; }
         public int IDkategorii { get; set; }
-        public string IlośćJednostkowa { get; set; }
+        public string? IlośćJednostkowa { get; set; }
         public decimal CenaJednostkowa { get; set; }
         public int StanMagazynu { get; set; }
         public int IlośćZamówiona { get; set; }
