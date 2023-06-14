@@ -14,32 +14,35 @@
 			<ColumnDefinition Width="Auto" />
 			<ColumnDefinition />
 		</Grid.ColumnDefinitions>
+		<Grid.RowDefinitions>
+			<RowDefinition />
+			<RowDefinition Height="Auto" />
+		</Grid.RowDefinitions>
 
-		<ListBox Items="{Binding TableNames}">
+		<ListBox Grid.Column="0" Items="{Binding Buttons}">
 			<ListBox.ItemTemplate>
 				<DataTemplate>
-					<StackPanel Orientation="Horizontal">
-						<TextBlock Text="{Binding}" Margin="5"/>
-						<ItemsControl Items="{Binding Path=DataContext.TableColumns, RelativeSource={RelativeSource AncestorType=Window}}">
-							<ItemsControl.ItemsPanel>
-								<ItemsPanelTemplate>
-									<StackPanel Orientation="Horizontal"/>
-								</ItemsPanelTemplate>
-							</ItemsControl.ItemsPanel>
-							<ItemsControl.ItemTemplate>
-								<DataTemplate>
-									<Button Content="{Binding}" Margin="5" Tag="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=Tag}" Command="{Binding ChangeFocusCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Tag}"/>
-								</DataTemplate>
-							</ItemsControl.ItemTemplate>
-						</ItemsControl>
-					</StackPanel>
+					<Button Content="{Binding Content}"
+                            Margin="{Binding Margin}"
+                            Tag="{Binding Tag}"
+                            Command="{Binding Command}"
+                            CommandParameter="{Binding CommandParameter}"
+                            Width="100"
+                            Height="30"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"/>
 				</DataTemplate>
 			</ListBox.ItemTemplate>
 		</ListBox>
 
 		<ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto">
-			<DataGrid Items="{Binding Dostawcy}" AutoGenerateColumns="True"/>
+			<DataGrid x:Name="Data" Items="{Binding SelectedTable, Mode=TwoWay}" AutoGenerateColumns="True"/>
 		</ScrollViewer>
-	</Grid>
 
+
+		<StackPanel Grid.Column="1" Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="5">
+			<Button Content="Update Table" Width="120" Height="30" Margin="5" Command="{Binding UpdateTableCommand}" />
+			<Button Content="Delete Row" Width="120" Height="30" Margin="5" Command="{Binding DeleteRowCommand}" />
+		</StackPanel>
+	</Grid>
 </Window>

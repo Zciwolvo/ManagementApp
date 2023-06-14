@@ -1,9 +1,16 @@
-﻿using GalaSoft.MvvmLight.Command;
+﻿using Avalonia;
+using Avalonia.Collections;
+using Avalonia.Controls;
+using GalaSoft.MvvmLight.Command;
 using ManagementApp.Models;
 using ReactiveUI;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Linq;
 using System.Windows.Input;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ManagementApp.ViewModels
 {
@@ -70,29 +77,72 @@ namespace ManagementApp.ViewModels
             set => this.RaiseAndSetIfChanged(ref _zamówienia, value);
         }
 
-        private ObservableCollection<object> _currentTable;
-        public ObservableCollection<object> CurrentTable
+        private object _selectedTable;
+        public object SelectedTable
         {
-            get => _currentTable;
-            set => this.RaiseAndSetIfChanged(ref _currentTable, value);
+            get => _selectedTable;
+            set => this.RaiseAndSetIfChanged(ref _selectedTable, value);
         }
 
-        public ICommand ChangeFocusCommand { get; }
-
-        private void ChangeFocus(string tableIndexString)
+        private DataGrid _dataGrid;
+        public DataGrid DataGrid
         {
-            if (int.TryParse(tableIndexString, out int tableIndex))
+            get => _dataGrid;
+            set => this.RaiseAndSetIfChanged(ref _dataGrid, value);
+        }
+
+        public List<ButtonItem> Buttons { get; }
+
+        private List<ButtonItem> GenerateButtons()
+        {
+            var buttons = new List<ButtonItem>();
+
+            for (int i = 0; i < 8; i++)
             {
-                if (tableIndex >= 0 && tableIndex < Tables.Count)
+                var button = new ButtonItem
                 {
-                    Type objectType = Tables[tableIndex].GetType().GetGenericArguments()[0];
-                    Type collectionType = typeof(ObservableCollection<>).MakeGenericType(objectType);
-                    object currentTable = Activator.CreateInstance(collectionType);
-                    CurrentTable = (ObservableCollection<object>)currentTable;
-                }
+                    Content = TableNames[i],
+                    Margin = new Thickness(5),
+                    Tag = i,
+                    Command = ChangeFocusCommand,
+                    CommandParameter = i
+                };
+
+                buttons.Add(button);
+            }
+
+            return buttons;
+        }
+
+        private void UpdateTable()
+        {
+            var selectedTable = SelectedTable as IEnumerable<object>;
+
+            if (selectedTable != null)
+            {
+                var tableName = TableNames[CurrIndex];
+                ManagementModelManipulation.UpdateDatabase(ConnectionsString, tableName, selectedTable);
+                DataGrid.Items = new AvaloniaList<object>(selectedTable);
             }
         }
 
+
+
+
+
+        public int CurrIndex { get; set; }
+
+        public ICommand ChangeFocusCommand { get; }
+        public ICommand UpdateTableCommand { get; }
+
+        private void ChangeFocus(int tableIndex)
+        {
+            if (tableIndex >= 0 && tableIndex < Tables.Count)
+            {
+                CurrIndex = tableIndex;
+                SelectedTable = Tables[tableIndex];
+            }
+        }
 
         public ObservableCollection<object> Tables { get; }
         public ObservableCollection<string> TableNames { get; }
@@ -128,7 +178,10 @@ namespace ManagementApp.ViewModels
             Zamówienia = new ObservableCollection<Zamówienia>(ManagementModelManipulation.ReadDataFromTable<Zamówienia>("Zamówienia", ConnectionsString));
             Tables.Add(Zamówienia);
             TableNames.Add("Zamówienia");
-            ChangeFocusCommand = new RelayCommand<string>(ChangeFocus);
+            ChangeFocusCommand = new RelayCommand<int>(ChangeFocus);
+            UpdateTableCommand = new RelayCommand(UpdateTable);
+            Buttons = GenerateButtons();
+
         }
 
     }
