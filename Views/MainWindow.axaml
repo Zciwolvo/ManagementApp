@@ -36,13 +36,13 @@
 		</ListBox>
 
 		<ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto">
-			<DataGrid x:Name="Data" Items="{Binding SelectedTable, Mode=TwoWay}" AutoGenerateColumns="True"/>
+			<DataGrid x:Name="DataGrid" Items="{Binding DataGrid, Mode=TwoWay}" AutoGenerateColumns="True"/>
 		</ScrollViewer>
 
 
 		<StackPanel Grid.Column="1" Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="5">
 			<Button Content="Update Table" Width="120" Height="30" Margin="5" Command="{Binding UpdateTableCommand}" />
-			<Button Content="Delete Row" Width="120" Height="30" Margin="5" Command="{Binding DeleteRowCommand}" />
+			<Button Content="Delete Row" Width="120" Height="30" Margin="5" Command="{Binding DeleteCurrentRowCommand}" />
 		</StackPanel>
 	</Grid>
 </Window>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Data.SqlClient;
+using System.Data.SqlTypes;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -58,49 +59,83 @@ namespace ManagementApp.Models
             {
                 connection.Open();
 
-                var clearCommandText = $"DELETE FROM {tableName}";
-                using (var clearCommand = new SqlCommand(clearCommandText, connection))
-                {
-                    clearCommand.ExecuteNonQuery();
-                }
+                var properties = data.FirstOrDefault()?.GetType().GetProperties();
+                var updateCommandText = GenerateUpdateCommand(tableName, properties);
 
-                var insertCommandText = GenerateInsertCommand(tableName, data);
-                using (var insertCommand = new SqlCommand(insertCommandText, connection))
+                foreach (var item in data)
                 {
-                    insertCommand.ExecuteNonQuery();
+                    var updateCommand = new SqlCommand(updateCommandText, connection);
+
+                    for (int i = 1; i < properties.Length; i++) 
+                    {
+                        var property = properties[i];
+                        var value = property.GetValue(item);
+
+                        if (property.PropertyType == typeof(DateTime) && (DateTime)value < SqlDateTime.MinValue.Value)
+                            continue;
+
+                        var parameterName = $"@param{i - 1}"; 
+                        updateCommand.Parameters.AddWithValue(parameterName, value ?? DBNull.Value);
+                    }
+
+                    var idValue = properties[0].GetValue(item);
+                    updateCommand.Parameters.AddWithValue("@ID", idValue);
+
+                    updateCommand.ExecuteNonQuery();
                 }
             }
         }
 
 
-        private static string GenerateInsertCommand(string tableName, IEnumerable<object> data)
+
+        private static string GenerateUpdateCommand(string tableName, PropertyInfo[] properties)
         {
-            var insertCommand = new StringBuilder();
-            insertCommand.AppendLine($"INSERT INTO {tableName} VALUES");
+            var updateCommand = new StringBuilder();
+            updateCommand.AppendLine($"UPDATE {tableName} SET");
 
-            var properties = data.FirstOrDefault()?.GetType().GetProperties();
-            var valuePlaceholders = new List<string>();
-
-            foreach (var item in data)
+            for (int i = 1; i < properties.Length; i++)
             {
-                var propertyValues = new List<string>();
+                var property = properties[i];
+                var propertyName = property.Name;
+                var propertyType = property.PropertyType;
 
-                foreach (var property in properties)
-                {
-                    var value = property.GetValue(item);
-                    var formattedValue = (value != null) ? $"'{value.ToString()}'" : "NULL";
-                    propertyValues.Add(formattedValue);
-                }
+                if (propertyType == typeof(byte[]))
+                    continue;
 
-                var rowValues = string.Join(", ", propertyValues);
-                valuePlaceholders.Add($"({rowValues})");
+                var parameterName = $"@param{i - 1}";
+                updateCommand.AppendLine($"{propertyName} = {parameterName},");
             }
 
-            var allValues = string.Join(", ", valuePlaceholders);
-            insertCommand.AppendLine(allValues);
+            updateCommand.Remove(updateCommand.Length - 3, 1);
 
-            return insertCommand.ToString();
+            var idColumnName = properties[0].Name;
+            updateCommand.AppendLine($"WHERE {idColumnName} = @ID");
+
+            return updateCommand.ToString();
         }
+
+        public static void DeleteRow(string con, string tableName, object row)
+        {
+            using (var connection = new SqlConnection(con))
+            {
+                connection.Open();
+
+                var properties = row.GetType().GetProperties();
+                var idValue = properties[0].GetValue(row);
+
+                var deleteCommandText = $"DELETE FROM {tableName} WHERE ID = @ID";
+
+                using (var deleteCommand = new SqlCommand(deleteCommandText, connection))
+                {
+                    deleteCommand.Parameters.AddWithValue("@ID", idValue);
+                    deleteCommand.ExecuteNonQuery();
+                }
+            }
+        }
+
+
+
+
 
     }
 }

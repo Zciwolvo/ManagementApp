@@ -5,6 +5,7 @@ using GalaSoft.MvvmLight.Command;
 using ManagementApp.Models;
 using ReactiveUI;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -77,19 +78,15 @@ namespace ManagementApp.ViewModels
             set => this.RaiseAndSetIfChanged(ref _zamówienia, value);
         }
 
-        private object _selectedTable;
-        public object SelectedTable
-        {
-            get => _selectedTable;
-            set => this.RaiseAndSetIfChanged(ref _selectedTable, value);
-        }
-
-        private DataGrid _dataGrid;
-        public DataGrid DataGrid
+        private object _dataGrid;
+        public object DataGrid
         {
             get => _dataGrid;
             set => this.RaiseAndSetIfChanged(ref _dataGrid, value);
         }
+
+
+
 
         public List<ButtonItem> Buttons { get; }
 
@@ -116,15 +113,48 @@ namespace ManagementApp.ViewModels
 
         private void UpdateTable()
         {
-            var selectedTable = SelectedTable as IEnumerable<object>;
+            var selectedTable = DataGrid as IEnumerable<object>;
 
             if (selectedTable != null)
             {
                 var tableName = TableNames[CurrIndex];
                 ManagementModelManipulation.UpdateDatabase(ConnectionsString, tableName, selectedTable);
-                DataGrid.Items = new AvaloniaList<object>(selectedTable);
             }
         }
+
+        private void DeleteRows()
+        {
+            var selectedRows = DataGrid as IList;
+
+            if (selectedRows != null && selectedRows.Count > 0)
+            {
+                var tableName = TableNames[CurrIndex];
+                if (DataGrid is DataGrid dataGrid)
+                {
+                    // Get the first column's name
+                    var firstColumnName = dataGrid.Columns[0].Header.ToString();
+
+                    // Find the selected rows with the first column's value
+                    foreach (var selectedRow in selectedRows)
+                    {
+                        var idValue = selectedRow.GetType().GetProperty(firstColumnName)?.GetValue(selectedRow);
+                        if (idValue != null)
+                        {
+                            ManagementModelManipulation.DeleteRow(ConnectionsString, tableName, idValue);
+                        }
+                    }
+                }
+
+                ChangeFocus(CurrIndex);
+            }
+        }
+
+
+
+
+
+
+
 
 
 
@@ -135,12 +165,14 @@ namespace ManagementApp.ViewModels
         public ICommand ChangeFocusCommand { get; }
         public ICommand UpdateTableCommand { get; }
 
+        public ICommand DeleteCurrentRowCommand { get; }
+
         private void ChangeFocus(int tableIndex)
         {
             if (tableIndex >= 0 && tableIndex < Tables.Count)
             {
                 CurrIndex = tableIndex;
-                SelectedTable = Tables[tableIndex];
+                DataGrid = Tables[tableIndex];
             }
         }
 
@@ -180,6 +212,7 @@ namespace ManagementApp.ViewModels
             TableNames.Add("Zamówienia");
             ChangeFocusCommand = new RelayCommand<int>(ChangeFocus);
             UpdateTableCommand = new RelayCommand(UpdateTable);
+            DeleteCurrentRowCommand = new RelayCommand(DeleteRows);
             Buttons = GenerateButtons();
 
         }
