@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia;
+using ManagementApp.Views;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
@@ -7,9 +10,12 @@ using System.Data.SqlTypes;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using static ManagementApp.ViewModels.ViewModelBase;
+using ManagementApp.ViewModels;
 
 namespace ManagementApp.Models
 {
+
     public class ManagementModelManipulation
     {
 
@@ -40,7 +46,7 @@ namespace ManagementApp.Models
                                     }
                                     catch (Exception ex)
                                     {
-                                        Console.WriteLine($"Error setting property {property.Name}: {ex.Message}");
+                                        Console.WriteLine("");
                                     }
                                 }
                             }
@@ -59,79 +65,81 @@ namespace ManagementApp.Models
             {
                 connection.Open();
 
-                var properties = data.FirstOrDefault()?.GetType().GetProperties();
-                var updateCommandText = GenerateUpdateCommand(tableName, properties);
+                // Start a transaction
+                var transaction = connection.BeginTransaction();
 
-                foreach (var item in data)
+                try
                 {
-                    var updateCommand = new SqlCommand(updateCommandText, connection);
+                    // Delete all rows from the table
+                    var deleteCommandText = $"DELETE FROM {tableName}";
+                    var deleteCommand = new SqlCommand(deleteCommandText, connection, transaction);
+                    deleteCommand.ExecuteNonQuery();
 
-                    for (int i = 1; i < properties.Length; i++) 
+                    var properties = data.FirstOrDefault()?.GetType().GetProperties();
+                    var insertCommandText = GenerateInsertCommand(tableName, properties);
+
+                    foreach (var item in data)
                     {
-                        var property = properties[i];
-                        var value = property.GetValue(item);
+                        var insertCommand = new SqlCommand(insertCommandText, connection, transaction);
 
-                        if (property.PropertyType == typeof(DateTime) && (DateTime)value < SqlDateTime.MinValue.Value)
-                            continue;
+                        for (int i = 0; i < properties.Length; i++)
+                        {
+                            var property = properties[i];
+                            var value = property.GetValue(item);
 
-                        var parameterName = $"@param{i - 1}"; 
-                        updateCommand.Parameters.AddWithValue(parameterName, value ?? DBNull.Value);
+                            if (property.PropertyType == typeof(DateTime) && (DateTime)value < SqlDateTime.MinValue.Value)
+                                continue;
+
+                            var parameterName = $"@param{i}";
+                            insertCommand.Parameters.AddWithValue(parameterName, value ?? DBNull.Value);
+                        }
+
+                        insertCommand.ExecuteNonQuery();
                     }
 
-                    var idValue = properties[0].GetValue(item);
-                    updateCommand.Parameters.AddWithValue("@ID", idValue);
-
-                    updateCommand.ExecuteNonQuery();
+                    // Commit the transaction if everything succeeded
+                    transaction.Commit();
                 }
-            }
-        }
-
-
-
-        private static string GenerateUpdateCommand(string tableName, PropertyInfo[] properties)
-        {
-            var updateCommand = new StringBuilder();
-            updateCommand.AppendLine($"UPDATE {tableName} SET");
-
-            for (int i = 1; i < properties.Length; i++)
-            {
-                var property = properties[i];
-                var propertyName = property.Name;
-                var propertyType = property.PropertyType;
-
-                if (propertyType == typeof(byte[]))
-                    continue;
-
-                var parameterName = $"@param{i - 1}";
-                updateCommand.AppendLine($"{propertyName} = {parameterName},");
-            }
-
-            updateCommand.Remove(updateCommand.Length - 3, 1);
-
-            var idColumnName = properties[0].Name;
-            updateCommand.AppendLine($"WHERE {idColumnName} = @ID");
-
-            return updateCommand.ToString();
-        }
-
-        public static void DeleteRow(string con, string tableName, object row)
-        {
-            using (var connection = new SqlConnection(con))
-            {
-                connection.Open();
-
-                var properties = row.GetType().GetProperties();
-                var idValue = properties[0].GetValue(row);
-
-                var deleteCommandText = $"DELETE FROM {tableName} WHERE ID = @ID";
-
-                using (var deleteCommand = new SqlCommand(deleteCommandText, connection))
+                catch (SqlException ex)
                 {
-                    deleteCommand.Parameters.AddWithValue("@ID", idValue);
-                    deleteCommand.ExecuteNonQuery();
+                    Console.WriteLine($"An error occurred while updating the database: {ex.Message}");
+
+                    try
+                    {
+                        // Roll back the transaction
+                        transaction.Rollback();
+                    }
+                    catch (Exception rollbackEx)
+                    {
+                        Console.WriteLine($"Rollback failed: {rollbackEx.Message}");
+                    }
                 }
             }
         }
+
+
+
+
+
+
+        private static string GenerateInsertCommand(string tableName, PropertyInfo[] properties)
+        {
+            var insertCommand = new StringBuilder();
+            insertCommand.AppendLine($"INSERT INTO {tableName}");
+
+            var propertyNames = properties.Select(p => p.Name);
+            var columnNames = string.Join(", ", propertyNames);
+            var parameterNames = propertyNames.Select((p, i) => $"@param{i}");
+            var parameterList = string.Join(", ", parameterNames);
+
+            insertCommand.AppendLine($"({columnNames})");
+            insertCommand.AppendLine("VALUES");
+            insertCommand.AppendLine($"({parameterList})");
+
+            return insertCommand.ToString();
+        }
+
+
 
 
 

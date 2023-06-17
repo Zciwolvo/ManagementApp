@@ -85,9 +85,6 @@ namespace ManagementApp.ViewModels
             set => this.RaiseAndSetIfChanged(ref _dataGrid, value);
         }
 
-
-
-
         public List<ButtonItem> Buttons { get; }
 
         private List<ButtonItem> GenerateButtons()
@@ -122,42 +119,20 @@ namespace ManagementApp.ViewModels
             }
         }
 
-        private void DeleteRows()
+        private void AddEmptyRow()
         {
-            var selectedRows = DataGrid as IList;
+            var table = Tables[CurrIndex];
+            Type itemType = table.GetType().GenericTypeArguments.FirstOrDefault();
 
-            if (selectedRows != null && selectedRows.Count > 0)
+            if (itemType != null)
             {
-                var tableName = TableNames[CurrIndex];
-                if (DataGrid is DataGrid dataGrid)
+                var emptyRow = Activator.CreateInstance(itemType);
+                if (table is IList typedTable)
                 {
-                    // Get the first column's name
-                    var firstColumnName = dataGrid.Columns[0].Header.ToString();
-
-                    // Find the selected rows with the first column's value
-                    foreach (var selectedRow in selectedRows)
-                    {
-                        var idValue = selectedRow.GetType().GetProperty(firstColumnName)?.GetValue(selectedRow);
-                        if (idValue != null)
-                        {
-                            ManagementModelManipulation.DeleteRow(ConnectionsString, tableName, idValue);
-                        }
-                    }
+                    typedTable.Add(emptyRow);
                 }
-
-                ChangeFocus(CurrIndex);
             }
         }
-
-
-
-
-
-
-
-
-
-
 
 
         public int CurrIndex { get; set; }
@@ -165,7 +140,7 @@ namespace ManagementApp.ViewModels
         public ICommand ChangeFocusCommand { get; }
         public ICommand UpdateTableCommand { get; }
 
-        public ICommand DeleteCurrentRowCommand { get; }
+        public ICommand AddRowCommand { get; }
 
         private void ChangeFocus(int tableIndex)
         {
@@ -212,7 +187,7 @@ namespace ManagementApp.ViewModels
             TableNames.Add("Zamówienia");
             ChangeFocusCommand = new RelayCommand<int>(ChangeFocus);
             UpdateTableCommand = new RelayCommand(UpdateTable);
-            DeleteCurrentRowCommand = new RelayCommand(DeleteRows);
+            AddRowCommand = new RelayCommand(AddEmptyRow);
             Buttons = GenerateButtons();
 
         }

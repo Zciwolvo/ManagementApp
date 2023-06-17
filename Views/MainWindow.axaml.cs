@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using ManagementApp.ViewModels;
 using Avalonia.ReactiveUI;
 using Avalonia;
+using Avalonia.Interactivity;
 
 namespace ManagementApp.Views
 {
@@ -15,6 +16,5 @@ namespace ManagementApp.Views
             DataContext = viewModel;
 
         }
-
     }
 }

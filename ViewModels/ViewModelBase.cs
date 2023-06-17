@@ -1,6 +1,12 @@
 ﻿using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
 using ReactiveUI;
 using System.Windows.Input;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Avalonia.Markup.Xaml;
+using System.Reactive;
+using System;
 
 namespace ManagementApp.ViewModels
 {
@@ -14,5 +20,7 @@ namespace ManagementApp.ViewModels
             public ICommand Command { get; set; }
             public int CommandParameter { get; set; }
         }
+
+
     }
 }
