@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Text;
 using static ManagementApp.ViewModels.ViewModelBase;
 using ManagementApp.ViewModels;
+using Avalonia.Controls;
 
 namespace ManagementApp.Models
 {
@@ -46,7 +47,7 @@ namespace ManagementApp.Models
                                     }
                                     catch (Exception ex)
                                     {
-                                        Console.WriteLine("");
+                                        Console.WriteLine(ex.Message);
                                     }
                                 }
                             }
@@ -59,18 +60,16 @@ namespace ManagementApp.Models
             return objects;
         }
 
-        public static void UpdateDatabase(string con, string tableName, IEnumerable<object> data)
+        public async static void UpdateDatabase(string con, string tableName, IEnumerable<object> data)
         {
             using (var connection = new SqlConnection(con))
             {
                 connection.Open();
 
-                // Start a transaction
                 var transaction = connection.BeginTransaction();
 
                 try
                 {
-                    // Delete all rows from the table
                     var deleteCommandText = $"DELETE FROM {tableName}";
                     var deleteCommand = new SqlCommand(deleteCommandText, connection, transaction);
                     deleteCommand.ExecuteNonQuery();
@@ -97,21 +96,21 @@ namespace ManagementApp.Models
                         insertCommand.ExecuteNonQuery();
                     }
 
-                    // Commit the transaction if everything succeeded
                     transaction.Commit();
                 }
                 catch (SqlException ex)
                 {
-                    Console.WriteLine($"An error occurred while updating the database: {ex.Message}");
+                    var mainWindow = (Window)((IClassicDesktopStyleApplicationLifetime)Application.Current.ApplicationLifetime).MainWindow;
+                    await ErrorDialog.Show(mainWindow, "Exception Caught", ex.Message, ErrorDialog.MessageBoxButtons.Ok);
 
                     try
                     {
-                        // Roll back the transaction
                         transaction.Rollback();
                     }
                     catch (Exception rollbackEx)
                     {
-                        Console.WriteLine($"Rollback failed: {rollbackEx.Message}");
+                        mainWindow = (Window)((IClassicDesktopStyleApplicationLifetime)Application.Current.ApplicationLifetime).MainWindow;
+                        await ErrorDialog.Show(mainWindow, "Exception Caught", rollbackEx.Message, ErrorDialog.MessageBoxButtons.Ok);
                     }
                 }
             }
