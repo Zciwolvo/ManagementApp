@@ -85,7 +85,7 @@ namespace ManagementApp.ViewModels
             set => this.RaiseAndSetIfChanged(ref _dataGrid, value);
         }
 
-        public List<ButtonItem> Buttons { get; }
+        public List<ButtonItem> Buttons { get; }    
 
         private List<ButtonItem> GenerateButtons()
         {
