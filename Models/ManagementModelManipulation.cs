@@ -116,11 +116,6 @@ namespace ManagementApp.Models
             }
         }
 
-
-
-
-
-
         private static string GenerateInsertCommand(string tableName, PropertyInfo[] properties)
         {
             var insertCommand = new StringBuilder();

@@ -133,23 +133,21 @@ namespace ManagementApp.ViewModels
                 }
             }
         }
-
-
         public int CurrIndex { get; set; }
+        private void ChangeFocus(int tableIndex)
+        {
+            if (tableIndex >= 0 && tableIndex < Tables.Count)
+            {
+                UpdateTable();
+                CurrIndex = tableIndex;
+                DataGrid = Tables[tableIndex];
+            }
+        }
 
         public ICommand ChangeFocusCommand { get; }
         public ICommand UpdateTableCommand { get; }
 
         public ICommand AddRowCommand { get; }
-
-        private void ChangeFocus(int tableIndex)
-        {
-            if (tableIndex >= 0 && tableIndex < Tables.Count)
-            {
-                CurrIndex = tableIndex;
-                DataGrid = Tables[tableIndex];
-            }
-        }
 
         public ObservableCollection<object> Tables { get; }
         public ObservableCollection<string> TableNames { get; }

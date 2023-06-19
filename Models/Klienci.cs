@@ -8,7 +8,7 @@ namespace ManagementApp.Models
 {
     public class Klienci
     {
-        public int IDklienta { get; set; }
+        public string? IDklienta { get; set; }
         public string? NazwaFirmy { get; set; }
         public string? Przedstawiciel { get; set; }
         public string? StanowiskoPrzedstawiciela { get; set; }
