@@ -146,9 +146,7 @@ namespace ManagementApp.ViewModels
 
         public ICommand ChangeFocusCommand { get; }
         public ICommand UpdateTableCommand { get; }
-
         public ICommand AddRowCommand { get; }
-
         public ObservableCollection<object> Tables { get; }
         public ObservableCollection<string> TableNames { get; }
 
